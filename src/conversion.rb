@@ -25,3 +25,7 @@ puts "Converted back from hexadecimal: #{hex_num}" # => 682
 # Convert from octal string to integer
 octal_num = '252'.to_i(8)
 puts "Converted back from octal: #{octal_num}" # => 170
+
+# View bit length of a decimal
+1.bit_length # 1
+100.bit_length # 7,

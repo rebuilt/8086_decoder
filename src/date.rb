@@ -65,10 +65,10 @@ puts "Day: #{day(bits)}"
 pp bits
 puts formatted_date(bits)
 
-def iterate_dates
+def iterate_dates(iterations)
   # Generate dates from 2000 to 2127, for each month and each day of the month
   # This will create a total of 100 * 31 * 12 * 128 = 4,761,600 dates
-  100.times do
+  iterations.times do
     (2000..2127).each do |year|
       (1..12).each do |month|
         (1..31).each do |day|
@@ -81,7 +81,7 @@ end
 
 def create_binary_file
   dates = []
-  iterate_dates do |year, month, day|
+  iterate_dates(1) do |year, month, day|
     bits = 0b0000000000000000
     bits = set_year(bits, year - 2000)
     bits = set_month(bits, month)
@@ -96,7 +96,7 @@ end
 def create_text_file
   dates = []
 
-  iterate_dates do |year, month, day|
+  iterate_dates(1) do |year, month, day|
     dates << "#{year}/#{month}/#{day}"
   end
 

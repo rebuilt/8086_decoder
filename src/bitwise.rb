@@ -130,3 +130,6 @@ while num < 4_000
   sleep 1
   system 'clear'
 end
+
+# a boolean in ruby is any class that implements the bitwise operators ^ , & , |
+#  true.methods - Object.methods
