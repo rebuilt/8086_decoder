@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'byebug'
 require 'benchmark'
 # https://www.58bits.com/blog/bitmask-and-bitwise-operations-in-ruby
@@ -61,16 +63,16 @@ pp bits
 bits = set_day(bits, 15)
 puts "Day: #{day(bits)}"
 pp bits
-pp 0b1111111111
 puts formatted_date(bits)
-puts [bits].pack('C*')
 
 def iterate_dates
-  1000.times do
-    (1..31).each do |day|
+  # Generate dates from 2000 to 2127, for each month and each day of the month
+  # This will create a total of 100 * 31 * 12 * 128 = 4,761,600 dates
+  100.times do
+    (2000..2127).each do |year|
       (1..12).each do |month|
-        (2000..2127).each do |year|
-          yield day, month, year
+        (1..31).each do |day|
+          yield year, month, day
         end
       end
     end
@@ -79,9 +81,7 @@ end
 
 def create_binary_file
   dates = []
-  # Generate 47244000 dates
-
-  iterate_dates do |day, month, year|
+  iterate_dates do |year, month, day|
     bits = 0b0000000000000000
     bits = set_year(bits, year - 2000)
     bits = set_month(bits, month)
@@ -96,7 +96,7 @@ end
 def create_text_file
   dates = []
 
-  iterate_dates do |day, month, year|
+  iterate_dates do |year, month, day|
     dates << "#{year}/#{month}/#{day}"
   end
 
@@ -107,9 +107,10 @@ end
 
 p [:binary, Benchmark.realtime { create_binary_file }.round(2)]
 p [:text, Benchmark.realtime { create_text_file }.round(2)]
-# File.open 'dates.bin', 'rb' do |file|
-#   unpacked_dates = file.read.unpack('S>*')
-#   unpacked_dates.each do |date_bits|
-#     puts formatted_date(date_bits)
-#   end
-# end
+
+File.open 'dates.bin', 'rb' do |file|
+  unpacked_dates = file.read.unpack('S>*').first(10)
+  unpacked_dates.each do |date_bits|
+    puts formatted_date(date_bits)
+  end
+end
