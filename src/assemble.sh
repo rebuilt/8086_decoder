@@ -10,7 +10,7 @@ ASM_FILE="${1:-$DEFAULT_FILE}"
 BASENAME=$(basename "$ASM_FILE" .asm)
 
 # Output file name
-OUTPUT_FILE="${BASENAME}.com"
+OUTPUT_FILE="${BASENAME}"
 
 # Compile using NASM
 echo "Compiling '$ASM_FILE' to '$OUTPUT_FILE'..."
