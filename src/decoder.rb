@@ -46,19 +46,18 @@ def decode_8086(file_path)
           if register_to_register_operation
             reg_field = (bytes[i + 1] & 0b00111000) >> 3
             r_m_field = bytes[i + 1] & 0b00000111
-            if instruction_operates_on_byte_data
-              if reg_field_is_source
-                source = EIGHT_BIT_REGISTERS[reg_field]
-                destination = EIGHT_BIT_REGISTERS[r_m_field]
-              else
-                source = EIGHT_BIT_REGISTERS[r_m_field]
-                destination = EIGHT_BIT_REGISTERS[reg_field]
-              end
 
-            elsif reg_field_is_source
+            case [instruction_operates_on_byte_data, reg_field_is_source]
+            when [true, true] # Byte source, byte destination
+              source = EIGHT_BIT_REGISTERS[reg_field]
+              destination = EIGHT_BIT_REGISTERS[r_m_field]
+            when [true, false] # Byte source, word destination
+              source = EIGHT_BIT_REGISTERS[r_m_field]
+              destination = EIGHT_BIT_REGISTERS[reg_field]
+            when [false, true] # Word source, byte destination
               source = SIXTEEN_BIT_REGISTERS[reg_field]
               destination = SIXTEEN_BIT_REGISTERS[r_m_field]
-            else
+            when [false, false] # Word source, word destination
               source = SIXTEEN_BIT_REGISTERS[r_m_field]
               destination = SIXTEEN_BIT_REGISTERS[reg_field]
             end
