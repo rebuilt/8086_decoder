@@ -7,26 +7,26 @@
 require 'debug'
 
 EIGHT_BIT_REGISTERS = {
-  0b000 => 'AL',
-  0b001 => 'CL',
-  0b010 => 'DL',
-  0b011 => 'BL',
-  0b100 => 'AH',
-  0b101 => 'CH',
-  0b110 => 'DH',
-  0b111 => 'BH'
+  0b000 => 'al',
+  0b001 => 'cl',
+  0b010 => 'dl',
+  0b011 => 'bl',
+  0b100 => 'ah',
+  0b101 => 'ch',
+  0b110 => 'dh',
+  0b111 => 'bh'
 
 }
 
 SIXTEEN_BIT_REGISTERS = {
-  0b000 => 'AX',
-  0b001 => 'CX',
-  0b010 => 'DX',
-  0b011 => 'BX',
-  0b100 => 'SP',
-  0b101 => 'BP',
-  0b110 => 'SI',
-  0b111 => 'DI'
+  0b000 => 'ax',
+  0b001 => 'cx',
+  0b010 => 'dx',
+  0b011 => 'bx',
+  0b100 => 'sp',
+  0b101 => 'bp',
+  0b110 => 'si',
+  0b111 => 'di'
 }
 
 def decode_8086(file_path)
@@ -35,13 +35,13 @@ def decode_8086(file_path)
 
   while i < bytes.length
     if i  < bytes.length
-      if (bytes[i] & 0b11111100) >> 2 == 0b100010
+      is_mov_instruction = (bytes[i] & 0b11111100) >> 2 == 0b100010
+      if is_mov_instruction
         opcode = 'mov'
         reg_field_is_source = (bytes[i] & 0b00000010) >> 1 == 0
         instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
 
         if i + 1 < bytes.length
-
           register_to_register_operation = ((bytes[i + 1] & 0b11000000) >> 6) == 0b11
           if register_to_register_operation
             reg_field = (bytes[i + 1] & 0b00111000) >> 3
@@ -68,18 +68,27 @@ def decode_8086(file_path)
           puts "Incomplete instruction: #{format('%04b',
                                                  i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
         end
-        output = "#{opcode} #{source}, #{destination}".upcase
+        output = "#{opcode} #{destination}, #{source}"
         puts(output)
       else
         puts "Unknown instruction: #{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Unknown instruction"
       end
     else
-      puts "#{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
+      puts "Incomplete instruction: #{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
     end
     i += 1
   end
 end
 
+# {}
+# instruction = {:byte => Byte}
+# |> decode_opcode_from_byte(instruction)
+# |> decode_direction(instruction)
+# |> decode_word(instruction)
+# |> decode_mod(instruction)
+# |> decode_register(instruction)
+# |> decode_r_m(instruction)
+
 # Replace with the path to your binary file
-binary_file = 'single_register_mov'
+binary_file = 'many_register_movs'
 decode_8086(binary_file)
