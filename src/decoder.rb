@@ -34,46 +34,30 @@ def decode_8086(file_path)
   i = 0
 
   while i < bytes.length
-    if i  < bytes.length
-      is_mov_instruction = (bytes[i] & 0b11111100) >> 2 == 0b100010
-      if is_mov_instruction
-        opcode = 'mov'
-        reg_field_is_source = (bytes[i] & 0b00000010) >> 1 == 0
-        instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
+    is_mov_instruction = (bytes[i] & 0b11111100) >> 2 == 0b100010
+    if is_mov_instruction
+      opcode = 'mov'
+      reg_field_is_source = (bytes[i] & 0b00000010) >> 1 == 0
+      instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
 
-        if i + 1 < bytes.length
-          register_to_register_operation = ((bytes[i + 1] & 0b11000000) >> 6) == 0b11
-          if register_to_register_operation
-            reg_field = (bytes[i + 1] & 0b00111000) >> 3
-            r_m_field = bytes[i + 1] & 0b00000111
-
-            case [instruction_operates_on_byte_data, reg_field_is_source]
-            when [true, true] # Byte source, byte destination
-              source = EIGHT_BIT_REGISTERS[reg_field]
-              destination = EIGHT_BIT_REGISTERS[r_m_field]
-            when [true, false] # Byte source, word destination
-              source = EIGHT_BIT_REGISTERS[r_m_field]
-              destination = EIGHT_BIT_REGISTERS[reg_field]
-            when [false, true] # Word source, byte destination
-              source = SIXTEEN_BIT_REGISTERS[reg_field]
-              destination = SIXTEEN_BIT_REGISTERS[r_m_field]
-            when [false, false] # Word source, word destination
-              source = SIXTEEN_BIT_REGISTERS[r_m_field]
-              destination = SIXTEEN_BIT_REGISTERS[reg_field]
-            end
-          end
-          i += 1
-        else
-          puts "Incomplete instruction: #{format('%04b',
-                                                 i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
+      if i + 1 < bytes.length
+        register_to_register_operation = ((bytes[i + 1] & 0b11000000) >> 6) == 0b11
+        if register_to_register_operation
+          reg_field = (bytes[i + 1] & 0b00111000) >> 3
+          r_m_field = bytes[i + 1] & 0b00000111
+          register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+          source = reg_field_is_source ? register_type[reg_field] : register_type[r_m_field]
+          destination = reg_field_is_source ? register_type[r_m_field] : register_type[reg_field]
         end
-        output = "#{opcode} #{destination}, #{source}"
-        puts(output)
+        i += 1
       else
-        puts "Unknown instruction: #{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Unknown instruction"
+        puts "Incomplete instruction: #{format('%04b',
+                                               i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
       end
+      output = "#{opcode} #{destination}, #{source}"
+      puts(output)
     else
-      puts "Incomplete instruction: #{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
+      puts "Unknown instruction: #{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Unknown instruction"
     end
     i += 1
   end
