@@ -41,8 +41,9 @@ def decode_8086(file_path)
       instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
 
       if i + 1 < bytes.length
-        register_to_register_operation = ((bytes[i + 1] & 0b11000000) >> 6) == 0b11
-        if register_to_register_operation
+        mod_field = (bytes[i + 1] & 0b11000000) >> 6
+        case mod_field
+        when 0b11 # Register to register
           reg_field = (bytes[i + 1] & 0b00111000) >> 3
           r_m_field = bytes[i + 1] & 0b00000111
           register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
