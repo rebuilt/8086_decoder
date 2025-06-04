@@ -54,7 +54,9 @@ def decode_8086(file_path)
         source = reg_field_is_source ? register_type[reg_field] : register_type[r_m_field]
         destination = reg_field_is_source ? register_type[r_m_field] : register_type[reg_field]
       end
-      output << "#{i.to_s(16)} #{bytes[i].to_s(16)}#{bytes[i + 1].to_s(16)}\t#{opcode} #{destination}, #{source}\n"
+      output << "#{format('%08X',
+                          i)}  #{format('%X', bytes[i])}#{format('%2X',
+                                                                 bytes[i + 1])}              #{opcode} #{destination},#{source}\n"
       i += 1
     else
       puts "#{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Unknown instruction"
