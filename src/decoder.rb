@@ -39,7 +39,8 @@ def decode_8086(file_path)
     if is_mov_instruction
       opcode = 'mov'
       reg_field_is_source = (bytes[i] & 0b00000010) >> 1 == 0
-      instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
+      (bytes[i] & 0b00000001)
+      register_set = reg_set(bytes[i])
 
       unless i + 1 < bytes.length
         return puts "#{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
@@ -48,11 +49,10 @@ def decode_8086(file_path)
       mod_field = (bytes[i + 1] & 0b11000000) >> 6
       case mod_field
       when 0b11 # Register to register
-        reg_field = (bytes[i + 1] & 0b00111000) >> 3
-        r_m_field = bytes[i + 1] & 0b00000111
-        register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        source = reg_field_is_source ? register_type[reg_field] : register_type[r_m_field]
-        destination = reg_field_is_source ? register_type[r_m_field] : register_type[reg_field]
+        reg_field = get_reg(bytes[i + 1])
+        r_m_field = get_r_m(bytes[i + 1])
+        source = get_source(reg_field_is_source, register_set, reg_field, r_m_field)
+        destination = get_destination(reg_field_is_source, register_set, reg_field, r_m_field)
       end
       output << "#{i.to_s(16)} #{bytes[i].to_s(16)}#{bytes[i + 1].to_s(16)}\t#{opcode} #{destination}, #{source}\n"
       i += 1
@@ -62,6 +62,26 @@ def decode_8086(file_path)
     i += 1
   end
   puts output
+end
+
+def get_reg(byte)
+  (byte & 0b00111000) >> 3
+end
+
+def get_r_m(byte)
+  byte & 0b00000111
+end
+
+def reg_set(byte)
+  (byte & 0b00000001) == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+end
+
+def get_source(reg_field_is_source, register_set, reg_field, r_m_field)
+  reg_field_is_source ? register_set[reg_field] : register_set[r_m_field]
+end
+
+def get_destination(reg_field_is_source, register_set, reg_field, r_m_field)
+  reg_field_is_source ? register_set[r_m_field] : register_set[reg_field]
 end
 
 # {}
