@@ -32,36 +32,56 @@ SIXTEEN_BIT_REGISTERS = {
 # Decode the binary file and print the instructions
 def decode_8086(file_path)
   bytes = File.binread(file_path).bytes
-  i = 0
+  index = 0
   output = ''
-  while i < bytes.length
-    is_mov_instruction = (bytes[i] & 0b11111100) >> 2 == 0b100010
-    if is_mov_instruction
-      opcode = 'mov'
-      reg_field_is_source = (bytes[i] & 0b00000010) >> 1 == 0
-      instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
+  while index < bytes.length
+    # is_mov_instruction = (bytes[index] & 0b11111100) >> 2 == 0b100010
+    case bytes[index]
+    when 0b10001000..0b10001111 # MOV instruction
 
-      unless i + 1 < bytes.length
-        return puts "#{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Incomplete instruction"
+      opcode = 'mov'
+      reg_field_is_source = (bytes[index] & 0b00000010) >> 1 == 0
+      instruction_operates_on_byte_data = (bytes[index] & 0b00000001) == 0
+
+      unless index + 1 < bytes.length
+        return puts "#{format('%08X',
+                              index)}  #{format('%X',
+                                                bytes[index])}#{format('%2X',
+                                                                       bytes[index + 1])}: #{format('%02b',
+                                                                                                    bytes[index])}     =>  Incomplete instruction"
       end
 
-      mod_field = (bytes[i + 1] & 0b11000000) >> 6
+      mod_field = (bytes[index + 1] & 0b11000000) >> 6
       case mod_field
       when 0b11 # Register to register
-        reg_field = (bytes[i + 1] & 0b00111000) >> 3
-        r_m_field = bytes[i + 1] & 0b00000111
+        reg_field = (bytes[index + 1] & 0b00111000) >> 3
+        r_m_field = bytes[index + 1] & 0b00000111
         register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
         source = reg_field_is_source ? register_type[reg_field] : register_type[r_m_field]
         destination = reg_field_is_source ? register_type[r_m_field] : register_type[reg_field]
+        output << "#{format('%08X',
+                            index)}  #{format('%X',
+                                              bytes[index])}#{format('%2X',
+                                                                     bytes[index + 1])}              #{opcode} #{destination},#{source}\n"
+        index += 1
       end
+    when 0b10110000..0b10111111 # MOV immediate to register
+      opcode = 'mov'
+      instruction_operates_on_byte_data = ((bytes[index] & 0b00001000) >> 3) == 0
+      register_code = (bytes[index] & 0b00000111)
+      register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      destination = register_type[register_code]
+      source = instruction_operates_on_byte_data ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+
       output << "#{format('%08X',
-                          i)}  #{format('%X', bytes[i])}#{format('%2X',
-                                                                 bytes[i + 1])}              #{opcode} #{destination},#{source}\n"
-      i += 1
+                          index)}  #{format('%2X',
+                                            bytes[index])}#{format('%2X',
+                                                                   bytes[index + 1])}              #{opcode} #{destination},#{source}\n"
+      index += instruction_operates_on_byte_data ? 1 : 2
     else
-      puts "#{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Unknown instruction"
+      puts "#{format('%04b', index)}: #{format('%02b', bytes[index])}     =>  Unknown instruction"
     end
-    i += 1
+    index += 1
   end
   puts output
 end
@@ -75,6 +95,8 @@ end
 # |> decode_register(instruction)
 # |> decode_r_m(instruction)
 
-# Replace with the path to your binary file
-binary_file = 'many_register_movs'
+# Replace with the path to your binary File
+binary_file = ARGV[0]
+binary_file ||= 'more_movs'
+
 decode_8086(binary_file)
