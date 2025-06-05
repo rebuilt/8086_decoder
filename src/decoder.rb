@@ -34,20 +34,11 @@ def decode_8086(file_path)
   bytes = File.binread(file_path).bytes
   i = 0
   output = ''
-  get_source = proc { |reg_field_is_source, register_set, reg_field, r_m_field|
-    # binding.break
-    reg_field_is_source ? register_set[reg_field] : register_set[r_m_field]
-  }.curry
-  get_destination = proc { |reg_field_is_source, register_set, reg_field, r_m_field|
-    reg_field_is_source ? register_set[r_m_field] : register_set[reg_field]
-  }.curry
   while i < bytes.length
     is_mov_instruction = (bytes[i] & 0b11111100) >> 2 == 0b100010
     if is_mov_instruction
       opcode = 'mov'
       reg_field_is_source = (bytes[i] & 0b00000010) >> 1 == 0
-      source = get_source.call(reg_field_is_source)
-      destination = get_destination.call(reg_field_is_source)
       instruction_operates_on_byte_data = (bytes[i] & 0b00000001) == 0
 
       unless i + 1 < bytes.length
@@ -59,14 +50,13 @@ def decode_8086(file_path)
       when 0b11 # Register to register
         reg_field = (bytes[i + 1] & 0b00111000) >> 3
         r_m_field = bytes[i + 1] & 0b00000111
-        register_set = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        source = source.call(register_set).call(reg_field).call(r_m_field)
-        destination = destination.call(register_set).call(reg_field).call(r_m_field)
+        register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+        source = reg_field_is_source ? register_type[reg_field] : register_type[r_m_field]
+        destination = reg_field_is_source ? register_type[r_m_field] : register_type[reg_field]
       end
       output << "#{format('%08X',
-                          i)}  #{format('%2X',
-                                        bytes[i])}#{format('%2X',
-                                                           bytes[i + 1])}              #{opcode} #{destination},#{source}\n"
+                          i)}  #{format('%X', bytes[i])}#{format('%2X',
+                                                                 bytes[i + 1])}              #{opcode} #{destination},#{source}\n"
       i += 1
     else
       puts "#{format('%04b', i)}: #{format('%02b', bytes[i])}     =>  Unknown instruction"
