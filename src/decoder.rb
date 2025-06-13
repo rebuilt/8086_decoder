@@ -48,21 +48,20 @@ def decode_8086(file_path)
       mod_field = (bytes[index + 1] & 0b11000000) >> 6
       case mod_field
       when 0b11 # Register to register
-        # reg_field = (bytes[index + 1] & 0b00111000) >> 3
-        reg_field = reg(bytes[index + 1])
-        r_m_field = r_m(bytes[index + 1])
-        register_set = w(bytes[index]) == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        source = d_field == 0 ? register_set[reg_field] : register_set[r_m_field]
-        destination = d_field == 0 ? register_set[r_m_field] : register_set[reg_field]
+        reg_field = (bytes[index + 1] & 0b00111000) >> 3
+        r_m_field = bytes[index + 1] & 0b00000111
+        register_type = w(bytes[index]) == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+        source = d_field == 0 ? register_type[reg_field] : register_type[r_m_field]
+        destination = d_field == 0 ? register_type[r_m_field] : register_type[reg_field]
         output << "#{opcode} #{destination},#{source}\n"
         index += 1
       end
     when 0b10110000..0b10111111 # MOV immediate to register
       opcode = 'mov'
       w_field = w(bytes[index], 0b00001000)
-      reg_field = (bytes[index] & 0b00000111)
-      register_set = w_field == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-      destination = register_set[reg_field]
+      register_code = (bytes[index] & 0b00000111)
+      register_type = w_field == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      destination = register_type[register_code]
       source = w_field == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
 
       output << "#{opcode} #{destination},#{source}\n"
@@ -83,15 +82,6 @@ end
 def w(byte, mask = 0b00000001)
   bit_length = mask.bit_length.clamp(0..)
   (byte & mask) >> bit_length - 1
-end
-
-def reg(byte, mask = 0b00111000, shift = 3)
-  bit_length = mask.bit_length.clamp(0..)
-  (byte & mask) >> bit_length - shift
-end
-
-def r_m(byte, mask = 0b00000111)
-  byte & mask
 end
 
 # {}
