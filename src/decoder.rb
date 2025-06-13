@@ -40,8 +40,8 @@ def decode_8086(file_path)
     when 0b10001000..0b10001111 # MOV instruction
 
       opcode = 'mov'
-      d_field = d(bytes[index])
-      w_field = w(bytes[index])
+      d = (bytes[index] & 0b00000010) >> 1
+      w = (bytes[index] & 0b00000001)
 
       return puts "#{format('%02b', bytes[index])}     =>  Incomplete instruction" unless index + 1 < bytes.length
 
@@ -50,38 +50,28 @@ def decode_8086(file_path)
       when 0b11 # Register to register
         reg_field = (bytes[index + 1] & 0b00111000) >> 3
         r_m_field = bytes[index + 1] & 0b00000111
-        register_type = w(bytes[index]) == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        source = d_field == 0 ? register_type[reg_field] : register_type[r_m_field]
-        destination = d_field == 0 ? register_type[r_m_field] : register_type[reg_field]
+        register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+        source = d == 0 ? register_type[reg_field] : register_type[r_m_field]
+        destination = d == 0 ? register_type[r_m_field] : register_type[reg_field]
         output << "#{opcode} #{destination},#{source}\n"
         index += 1
       end
     when 0b10110000..0b10111111 # MOV immediate to register
       opcode = 'mov'
-      w_field = w(bytes[index], 0b00001000)
+      w = ((bytes[index] & 0b00001000) >> 3)
       register_code = (bytes[index] & 0b00000111)
-      register_type = w_field == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
       destination = register_type[register_code]
-      source = w_field == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
 
       output << "#{opcode} #{destination},#{source}\n"
-      index += w_field == 0 ? 1 : 2
+      index += w == 0 ? 1 : 2
     else
       puts "#{format('%04b', index)}: #{format('%02b', bytes[index])}     =>  Unknown instruction"
     end
     index += 1
   end
   puts output
-end
-
-def d(byte, mask = 0b00000010)
-  bit_length = mask.bit_length.clamp(0..)
-  (byte & mask) >> bit_length - 1
-end
-
-def w(byte, mask = 0b00000001)
-  bit_length = mask.bit_length.clamp(0..)
-  (byte & mask) >> bit_length - 1
 end
 
 # {}
