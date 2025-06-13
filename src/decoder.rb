@@ -8,21 +8,21 @@ require 'debug'
 
 EIGHT_BIT_REGISTERS = {
   0b000 => 'al',
-  0b001 => 'cl',
   0b010 => 'dl',
+  0b001 => 'cl',
   0b011 => 'bl',
   0b100 => 'ah',
+  0b111 => 'bh',
   0b101 => 'ch',
-  0b110 => 'dh',
-  0b111 => 'bh'
+  0b110 => 'dh'
 
 }
 
 SIXTEEN_BIT_REGISTERS = {
   0b000 => 'ax',
+  0b011 => 'bx',
   0b001 => 'cx',
   0b010 => 'dx',
-  0b011 => 'bx',
   0b100 => 'sp',
   0b101 => 'bp',
   0b110 => 'si',
@@ -40,44 +40,32 @@ def decode_8086(file_path)
     when 0b10001000..0b10001111 # MOV instruction
 
       opcode = 'mov'
-      reg_field_is_source = (bytes[index] & 0b00000010) >> 1 == 0
-      instruction_operates_on_byte_data = (bytes[index] & 0b00000001) == 0
+      d = (bytes[index] & 0b00000010) >> 1
+      w = (bytes[index] & 0b00000001)
 
-      unless index + 1 < bytes.length
-        return puts "#{format('%08X',
-                              index)}  #{format('%X',
-                                                bytes[index])}#{format('%2X',
-                                                                       bytes[index + 1])}: #{format('%02b',
-                                                                                                    bytes[index])}     =>  Incomplete instruction"
-      end
+      return puts "#{format('%02b', bytes[index])}     =>  Incomplete instruction" unless index + 1 < bytes.length
 
       mod_field = (bytes[index + 1] & 0b11000000) >> 6
       case mod_field
       when 0b11 # Register to register
         reg_field = (bytes[index + 1] & 0b00111000) >> 3
         r_m_field = bytes[index + 1] & 0b00000111
-        register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        source = reg_field_is_source ? register_type[reg_field] : register_type[r_m_field]
-        destination = reg_field_is_source ? register_type[r_m_field] : register_type[reg_field]
-        output << "#{format('%08X',
-                            index)}  #{format('%X',
-                                              bytes[index])}#{format('%2X',
-                                                                     bytes[index + 1])}              #{opcode} #{destination},#{source}\n"
+        register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+        source = d == 0 ? register_type[reg_field] : register_type[r_m_field]
+        destination = d == 0 ? register_type[r_m_field] : register_type[reg_field]
+        output << "#{opcode} #{destination},#{source}\n"
         index += 1
       end
     when 0b10110000..0b10111111 # MOV immediate to register
       opcode = 'mov'
-      instruction_operates_on_byte_data = ((bytes[index] & 0b00001000) >> 3) == 0
+      w = ((bytes[index] & 0b00001000) >> 3)
       register_code = (bytes[index] & 0b00000111)
-      register_type = instruction_operates_on_byte_data ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
       destination = register_type[register_code]
-      source = instruction_operates_on_byte_data ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
 
-      output << "#{format('%08X',
-                          index)}  #{format('%2X',
-                                            bytes[index])}#{format('%2X',
-                                                                   bytes[index + 1])}              #{opcode} #{destination},#{source}\n"
-      index += instruction_operates_on_byte_data ? 1 : 2
+      output << "#{opcode} #{destination},#{source}\n"
+      index += w == 0 ? 1 : 2
     else
       puts "#{format('%04b', index)}: #{format('%02b', bytes[index])}     =>  Unknown instruction"
     end
