@@ -1,0 +1,19 @@
+This is the first video in the Prologue of the Performance-Aware Programming series. It is a brief introduction to what the course is about. Please see the Table of Contents to quickly navigate through the rest of the course as it is updated weekly. A lightly-edited transcript of the video appears below.
+
+Hello, and welcome to the Performance-Aware Programming Series! If you don't know what “Performance-Aware Programming” is, you're not alone. I made up the term for this course. I've never heard it before. But I needed a term to distinguish what we’ll be doing in this course from what we used to call “optimization”.
+
+Optimization is a well-known practice that has been happening in programming for generations. It refers to taking a particular program - often on a particular piece of hardware - and trying to maximize the performance. Typically this involved a lot of special-purpose knowledge about that hardware. It often meant getting really creative with how you manipulated parts of the hardware to get extra performance, perhaps even in ways no one really thought was possible until someone figured it out.
+
+True optimization of this kind is still happening today. But one of the problems we now face is that when people think of performance, they're only thinking of this old-school kind of optimization. They may think that it would be too difficult for them to do, because it's too complicated and requires too much special knowledge. Or, even if they think they could learn to do it, they might think it wouldn’t be worth the time to do within their typical product schedule.
+
+When we're talking about traditional optimization, that kind of thinking may well be correct. But nowadays we have entered an era of software where there's a different problem, separate from the idea of trying to maximize the performance of your program on a given piece of hardware.
+
+Nowadays, due to common programming practices, tool chains, methodologies - whatever you want to call the overall way in which we program - the average program tends to be extremely slow. Not slow like in the old days where maybe it wasn't as fast as it should be on the hardware, and we sit down to try and get 50% more performance out of it, or maybe 70% more performance if we’re really gung-ho. Not like that.
+
+Modern software is more like 1000 times slower than it should be. We’ve moved into is an era where optimization, while still happening and still great, is not really what the average programmer is missing. What's missing is a general performance awareness so that the software we produce can be more reasonably performant. It doesn't have to get all the performance out of the hardware it's running on. It just needs to not be horribly inefficient.
+
+With respect to all those reasons I said before - maybe you don't have enough time, maybe you don't have enough training on the hardware - it still may be true that real optimization isn’t feasible, or there isn’t a good business case for it. But I would argue there is always a business case for performance-aware programming - learning how performance works and then making smart, reasonable decisions based on that. It pays tremendous dividends, either in terms of user experience or in terms of lower server farm bills, or a host of other things like that.
+
+So I am using the term “performance-aware programming” to label that practice, and that's what this course is about. It’s designed to give you all of the information you need to understand why software is either fast or slow, and to understand how the decisions you make affect the gradient of software performance. It’s an effort to try to get everyone back onto the same page where we're no longer writing software that's 1000x times slower than it should be, or 10,000x times slower than it should be.
+
+That's performance aware programming.

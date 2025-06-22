@@ -1,0 +1,146 @@
+# Define opcode mappings
+# pg 558 of https://ia601800.us.archive.org/4/items/The_8086_Book_Russell_Rector_George_Alexy/The_8086_Book_Russell_Rector_George_Alexy.pdf
+# INSTRUCTION_MAP = {
+#   [0x89, 0xD9] => 'mov cx, bx'
+# }
+
+require 'debug'
+class Integer
+  def to_bin
+    to_s(2).rjust(8, '0')
+  end
+end
+
+EIGHT_BIT_REGISTERS = {
+  0b000 => 'al',
+  0b010 => 'dl',
+  0b001 => 'cl',
+  0b011 => 'bl',
+  0b100 => 'ah',
+  0b111 => 'bh',
+  0b101 => 'ch',
+  0b110 => 'dh'
+
+}
+
+SIXTEEN_BIT_REGISTERS = {
+  0b000 => 'ax',
+  0b011 => 'bx',
+  0b001 => 'cx',
+  0b010 => 'dx',
+  0b100 => 'sp',
+  0b101 => 'bp',
+  0b110 => 'si',
+  0b111 => 'di'
+}
+
+EFFECTIVE_ADDRESS_MODE_00 = {
+  0b000 => 'bx+si',
+  0b001 => 'bx+di',
+  0b010 => 'bp+si',
+  0b011 => 'bp+di',
+  0b100 => 'si',
+  0b101 => 'di',
+  0b110 => 'Direct address',
+  0b111 => 'bx'
+}
+
+EFFECTIVE_ADDRESS_MODE_01 = {
+  0b000 => 'bx + si + ',
+  0b001 => 'bx + di + ',
+  0b010 => 'bp + si + ',
+  0b011 => 'bp + di + ',
+  0b100 => 'si + ',
+  0b101 => 'di + ',
+  0b110 => 'bp + ',
+  0b111 => 'bx + '
+}
+
+EFFECTIVE_ADDRESS_MODE_10 = {
+  0b000 => 'bx + si + ',
+  0b001 => 'bx + di + ',
+  0b010 => 'bp + si + ',
+  0b011 => 'bp + di + ',
+  0b100 => 'si + ',
+  0b101 => 'di + ',
+  0b110 => 'bp + ',
+  0b111 => 'bx + '
+}
+
+# Decode the binary file and print the instructions
+def decode_8086(filepath)
+  bytes = File.binread(filepath).bytes
+  index = 0
+  output = ''
+  while index < bytes.length
+    # single byte instruction
+    case bytes[index]
+    when 0b10110000..0b10111111 # MOV immediate to register
+      opcode = 'mov'
+      w = ((bytes[index] & 0b00001000) >> 3)
+      register_code = (bytes[index] & 0b00000111)
+      register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      destination = register_type[register_code]
+      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+
+      output << "#{opcode} #{destination},#{source}\n"
+      index += w == 0 ? 1 : 2
+
+    # Multi-byte instruction
+    # is_mov_instruction = (bytes[index] & 0b11111100) >> 2 == 0b100010
+    when 0b10001000..0b10001011 # MOV instruction
+
+      opcode = 'mov'
+      d = (bytes[index] & 0b00000010) >> 1
+      w = (bytes[index] & 0b00000001)
+
+      # return puts "#{format('%02b', bytes[index])}     =>  Incomplete instruction" unless index + 1 < bytes.length
+
+      return unless index + 1 < bytes.length
+
+      mod_field = (bytes[index + 1] & 0b11000000) >> 6
+      r_m_field = bytes[index + 1] & 0b00000111
+      reg_field = (bytes[index + 1] & 0b00111000) >> 3
+      register_type = w.zero? ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      source = d.zero? ? register_type[reg_field] : register_type[r_m_field]
+      destination = d.zero? ? register_type[r_m_field] : register_type[reg_field]
+
+      case mod_field
+
+      when 0b00 # Memory mode. No displacement, except when r/m = 110
+        r_m_field = bytes[index + 1] & 0b00000111
+        reg_field = (bytes[index + 1] & 0b00111000) >> 3
+        register_type = w.zero? ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+        source = d.zero? ? EFFECTIVE_ADDRESS_MODE_00[r_m_field] : register_type[reg_field]
+        destination = d.zero? ? register_type[reg_field] : EFFECTIVE_ADDRESS_MODE_00[r_m_field]
+        output << "#{opcode} #{source},[#{destination}]\n"
+        index += 1
+      when 0b11 # Register to register
+        # reg_field = (bytes[index + 1] & 0b00111000) >> 3
+        # r_m_field = bytes[index + 1] & 0b00000111
+        # register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+        # source = d == 0 ? register_type[reg_field] : register_type[r_m_field]
+        # destination = d == 0 ? register_type[r_m_field] : register_type[reg_field]
+        output << "#{opcode} #{destination},#{source}\n"
+        index += 1
+      end
+    end
+    index += 1
+  end
+  puts output
+end
+
+# {}
+# instruction = {:byte => Byte}
+# |> decode_opcode_from_byte(instruction)
+# |> decode_direction(instruction)
+# |> decode_word(instruction)
+# |> decode_mod(instruction)
+# |> decode_register(instruction)
+# |> decode_r_m(instruction)
+
+# Replace with the path to your binary File
+binary_file = ARGV[0]
+binary_file ||= './asm/single_register_mov'
+
+decode_8086(binary_file)
