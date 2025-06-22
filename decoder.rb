@@ -46,25 +46,25 @@ EFFECTIVE_ADDRESS_MODE_00 = {
 }
 
 EFFECTIVE_ADDRESS_MODE_01 = {
-  0b000 => 'bx + si + ',
-  0b001 => 'bx + di + ',
-  0b010 => 'bp + si + ',
-  0b011 => 'bp + di + ',
-  0b100 => 'si + ',
-  0b101 => 'di + ',
-  0b110 => 'bp + ',
-  0b111 => 'bx + '
+  0b000 => 'bx + si',
+  0b001 => 'bx + di',
+  0b010 => 'bp + si',
+  0b011 => 'bp + di',
+  0b100 => 'si',
+  0b101 => 'di',
+  0b110 => 'bp',
+  0b111 => 'bx'
 }
 
 EFFECTIVE_ADDRESS_MODE_10 = {
-  0b000 => 'bx + si + ',
-  0b001 => 'bx + di + ',
-  0b010 => 'bp + si + ',
-  0b011 => 'bp + di + ',
-  0b100 => 'si + ',
-  0b101 => 'di + ',
-  0b110 => 'bp + ',
-  0b111 => 'bx + '
+  0b000 => 'bx + si',
+  0b001 => 'bx + di',
+  0b010 => 'bp + si',
+  0b011 => 'bp + di',
+  0b100 => 'si',
+  0b101 => 'di',
+  0b110 => 'bp',
+  0b111 => 'bx'
 }
 
 # Decode the binary file and print the instructions
@@ -94,36 +94,38 @@ def decode_8086(filepath)
       d = (bytes[index] & 0b00000010) >> 1
       w = (bytes[index] & 0b00000001)
 
-      # return puts "#{format('%02b', bytes[index])}     =>  Incomplete instruction" unless index + 1 < bytes.length
-
       return unless index + 1 < bytes.length
 
       mod_field = (bytes[index + 1] & 0b11000000) >> 6
       r_m_field = bytes[index + 1] & 0b00000111
       reg_field = (bytes[index + 1] & 0b00111000) >> 3
       register_type = w.zero? ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-      source = d.zero? ? register_type[reg_field] : register_type[r_m_field]
-      destination = d.zero? ? register_type[r_m_field] : register_type[reg_field]
 
-      case mod_field
-
-      when 0b00 # Memory mode. No displacement, except when r/m = 110
-        r_m_field = bytes[index + 1] & 0b00000111
-        reg_field = (bytes[index + 1] & 0b00111000) >> 3
-        register_type = w.zero? ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        source = d.zero? ? EFFECTIVE_ADDRESS_MODE_00[r_m_field] : register_type[reg_field]
-        destination = d.zero? ? register_type[reg_field] : EFFECTIVE_ADDRESS_MODE_00[r_m_field]
-        output << "#{opcode} #{source},[#{destination}]\n"
-        index += 1
-      when 0b11 # Register to register
-        # reg_field = (bytes[index + 1] & 0b00111000) >> 3
-        # r_m_field = bytes[index + 1] & 0b00000111
-        # register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-        # source = d == 0 ? register_type[reg_field] : register_type[r_m_field]
-        # destination = d == 0 ? register_type[r_m_field] : register_type[reg_field]
-        output << "#{opcode} #{destination},#{source}\n"
+      effective_address = case mod_field
+                          when 0b00
+                            EFFECTIVE_ADDRESS_MODE_00
+                          when 0b01
+                            EFFECTIVE_ADDRESS_MODE_01
+                          when 0b10
+                            EFFECTIVE_ADDRESS_MODE_10
+                          when 0b11
+                            w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+                          end
+      source = d.zero? ? register_type[reg_field] : effective_address[r_m_field]
+      if mod_field == 0b01 # Direct address, 8 bit displacement
+        source += "+0x#{bytes[index + 2].to_s(16)}"
         index += 1
       end
+
+      if mod_field == 0b10 # Direct address, 8 bit displacement
+        source += "#{bytes[index + 2..index + 3].pack('C*').unpack1('v')}"
+        index += 2
+      end
+
+      source = "[#{source}]" if mod_field != 0b11 # Memory mode
+      destination = d.zero? ? effective_address[r_m_field] : register_type[reg_field]
+      output << "#{opcode} #{destination},#{source}\n"
+      index += 1
     end
     index += 1
   end
