@@ -73,23 +73,9 @@ def decode_8086(filepath)
   index = 0
   output = ''
   while index < bytes.length
-    # single byte instruction
+
     case bytes[index]
-    when 0b10110000..0b10111111 # MOV immediate to register
-      opcode = 'mov'
-      w = ((bytes[index] & 0b00001000) >> 3)
-      register_code = (bytes[index] & 0b00000111)
-      register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
-      destination = register_type[register_code]
-      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
-
-      output << "#{opcode} #{destination},#{source}\n"
-      index += w == 0 ? 1 : 2
-
-    # Multi-byte instruction
-    # is_mov_instruction = (bytes[index] & 0b11111100) >> 2 == 0b100010
-    when 0b10001000..0b10001011 # MOV instruction
-
+    when 0b10001000..0b10001011 # Register/memory to/from register
       opcode = 'mov'
       d = (bytes[index] & 0b00000010) >> 1
       w = (bytes[index] & 0b00000001)
@@ -114,6 +100,10 @@ def decode_8086(filepath)
       source = d.zero? ? register_type[reg_field] : effective_address[r_m_field]
       destination = d.zero? ? effective_address[r_m_field] : register_type[reg_field]
 
+      if mod_field == 0b00 && r_m_field == 0b110 # Direct address, 16 bit displacement
+        source = "+0x#{bytes[index + 2].to_s(16)}"
+      end
+
       if mod_field == 0b01 # Direct address, 8 bit displacement
         effective_address_var = "+0x#{bytes[index + 2].to_s(16)}"
         d.zero? ? destination += effective_address_var : source += effective_address_var
@@ -132,6 +122,33 @@ def decode_8086(filepath)
       end
       output << "#{opcode} #{destination},#{source}\n"
       index += 1
+
+    when 0b10110000..0b10111111 # MOV immediate to register
+      opcode = 'mov'
+      w = ((bytes[index] & 0b00001000) >> 3)
+      register_code = (bytes[index] & 0b00000111)
+      register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
+      destination = register_type[register_code]
+      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+
+      output << "#{opcode} #{destination},#{source}\n"
+      index += w == 0 ? 1 : 2
+    when 0b10100000..0b10100001 # MOV register to/from accumulator.  Accumulator is the AL or AX register
+      opcode = 'mov'
+      w = bytes[index] & 0b00000001
+      destination = w == 0 ? 'al' : 'ax'
+      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+      source = "[#{source}]"
+      output << "#{opcode} #{destination},#{source}\n"
+      index += w == 0 ? 1 : 2
+    when 0b10100010..0b10100011 # MOV accumulator to memory register.   Accumulator is the AL or AX register
+      opcode = 'mov'
+      w = bytes[index] & 0b00000001
+      source = w == 0 ? 'al' : 'ax'
+      destination = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{bytes[index + 1..index + 2].pack('C*').unpack1('v').to_s(16)}"
+      destination = "[#{destination}]"
+      output << "#{opcode} #{destination},#{source}\n"
+      index += w == 0 ? 1 : 2
     end
     index += 1
   end

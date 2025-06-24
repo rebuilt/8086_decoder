@@ -34,6 +34,11 @@ RSpec.describe '#decode', :model do
     filename = 'memory_to_accumulator'
     compare_output(filename)
   end
+
+  it 'matches the output for accumulator to memory' do
+    filename = 'accumulator_to_memory'
+    compare_output(filename)
+  end
 end
 
 def compare_output(filename)
