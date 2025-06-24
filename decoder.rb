@@ -46,10 +46,10 @@ EFFECTIVE_ADDRESS_MODE_00 = {
 }
 
 EFFECTIVE_ADDRESS_MODE_01 = {
-  0b000 => 'bx + si',
-  0b001 => 'bx + di',
-  0b010 => 'bp + si',
-  0b011 => 'bp + di',
+  0b000 => 'bx+si',
+  0b001 => 'bx+di',
+  0b010 => 'bp+si',
+  0b011 => 'bp+di',
   0b100 => 'si',
   0b101 => 'di',
   0b110 => 'bp',
@@ -57,10 +57,10 @@ EFFECTIVE_ADDRESS_MODE_01 = {
 }
 
 EFFECTIVE_ADDRESS_MODE_10 = {
-  0b000 => 'bx + si',
-  0b001 => 'bx + di',
-  0b010 => 'bp + si',
-  0b011 => 'bp + di',
+  0b000 => 'bx+si',
+  0b001 => 'bx+di',
+  0b010 => 'bp+si',
+  0b011 => 'bp+di',
   0b100 => 'si',
   0b101 => 'di',
   0b110 => 'bp',
@@ -112,18 +112,24 @@ def decode_8086(filepath)
                             w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
                           end
       source = d.zero? ? register_type[reg_field] : effective_address[r_m_field]
+      destination = d.zero? ? effective_address[r_m_field] : register_type[reg_field]
+
       if mod_field == 0b01 # Direct address, 8 bit displacement
-        source += "+0x#{bytes[index + 2].to_s(16)}"
+        effective_address_var = "+0x#{bytes[index + 2].to_s(16)}"
+        d.zero? ? destination += effective_address_var : source += effective_address_var
         index += 1
       end
 
       if mod_field == 0b10 # Direct address, 8 bit displacement
-        source += "#{bytes[index + 2..index + 3].pack('C*').unpack1('v')}"
+        effective_address_var = "+0x#{bytes[index + 2..index + 3].pack('C*').unpack1('v').to_s(16)}"
+
+        d.zero? ? destination += effective_address_var : source += effective_address_var
         index += 2
       end
 
-      source = "[#{source}]" if mod_field != 0b11 # Memory mode
-      destination = d.zero? ? effective_address[r_m_field] : register_type[reg_field]
+      if mod_field != 0b11
+        d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
+      end
       output << "#{opcode} #{destination},#{source}\n"
       index += 1
     end

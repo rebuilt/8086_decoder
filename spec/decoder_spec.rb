@@ -11,8 +11,27 @@ RSpec.describe '#decode', :model do
     compare_output(filename)
   end
 
+  it 'matches the output for register movs' do
+    filename = 'register_movs'
+    compare_output(filename)
+  end
+
+  # it 'matches the output for add sub cmp instructions' do
+  #   filename = 'add_sub_cmp'
+  #   compare_output(filename)
+  # end
   it 'matches the output for source address calculations' do
     filename = 'source_address_calculation'
+    compare_output(filename)
+  end
+
+  # it 'matches the output for challenge movs' do
+  #   filename = 'challenge_movs'
+  #   compare_output(filename)
+  # end
+
+  it 'matches the output for memory to accumulator' do
+    filename = 'memory_to_accumulator'
     compare_output(filename)
   end
 end
