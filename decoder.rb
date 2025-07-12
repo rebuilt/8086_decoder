@@ -133,7 +133,7 @@ def decode_8086(filepath)
 
       output << "#{opcode} #{destination},#{source}\n"
       index += w == 0 ? 1 : 2
-    when 0b10100000..0b10100001 # MOV register to/from accumulator.  Accumulator is the AL or AX register
+    when 0b10100000..0b10100001 # MOV memory to accumulator.
       opcode = 'mov'
       w = bytes[index] & 0b00000001
       destination = w == 0 ? 'al' : 'ax'
@@ -141,7 +141,7 @@ def decode_8086(filepath)
       source = "[#{source}]"
       output << "#{opcode} #{destination},#{source}\n"
       index += w == 0 ? 1 : 2
-    when 0b10100010..0b10100011 # MOV accumulator to memory register.   Accumulator is the AL or AX register
+    when 0b10100010..0b10100011 # MOV accumulator to memory.
       opcode = 'mov'
       w = bytes[index] & 0b00000001
       source = w == 0 ? 'al' : 'ax'

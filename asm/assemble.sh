@@ -14,7 +14,7 @@ OUTPUT_FILE="${BASENAME}"
 
 # Compile using NASM
 echo "Compiling '$ASM_FILE' to '$OUTPUT_FILE'..."
-nasm -f bin "$ASM_FILE" -o "$OUTPUT_FILE"
+nasm -f bin "$ASM_FILE" -o "$(dirname "$0")/$OUTPUT_FILE"
 
 # Check if compilation succeeded
 if [ $? -eq 0 ]; then

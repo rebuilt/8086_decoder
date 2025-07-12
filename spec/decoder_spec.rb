@@ -25,10 +25,10 @@ RSpec.describe '#decode', :model do
     compare_output(filename)
   end
 
-  # it 'matches the output for challenge movs' do
-  #   filename = 'challenge_movs'
-  #   compare_output(filename)
-  # end
+  it 'matches the output for challenge movs' do
+    filename = 'challenge_movs'
+    compare_output(filename)
+  end
 
   it 'matches the output for memory to accumulator' do
     filename = 'memory_to_accumulator'
@@ -42,6 +42,8 @@ RSpec.describe '#decode', :model do
 end
 
 def compare_output(filename)
+  # recompile the files to ensure they are up to Date
+  puts `./asm/assemble.sh ./asm/#{filename}.asm`
   ndisasm_output = `ndisasm -b 16 ./asm/#{filename}`
   instructions = ndisasm_output.split("\n").map { |line| line.split(' ')[2..].join(' ') + "\n" }.join
 

@@ -26,7 +26,7 @@ mov dx, [bx - 32]
 mov [bp + di], byte 7
 mov [di + 901], word 347
 
-; Direct address
+ ;Direct address
 mov bp, [5]
 mov bx, [3458]
 
