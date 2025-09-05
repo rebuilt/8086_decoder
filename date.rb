@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require 'byebug'
+# require 'byebug'
 require 'benchmark'
+require 'debug'
 # https://www.58bits.com/blog/bitmask-and-bitwise-operations-in-ruby
 # https://www.webascender.com/blog/working-bits-bytes-ruby/
 bits = 0b0000000000000000
@@ -27,6 +28,7 @@ def day(bits)
 end
 
 def set_year(bits, year)
+  year -= 2000 if year >= 2000
   (bits & ZERO_YEAR_MASK) | (year << 9)
 end
 
@@ -114,3 +116,20 @@ File.open 'dates.bin', 'rb' do |file|
     puts formatted_date(date_bits)
   end
 end
+
+require 'bindata'
+
+class TinyDate < BinData::Record
+  endian :little
+  bit7 :year
+  bit4 :month
+  bit5 :day
+end
+
+# File.open('dates.bin', 'rb') do |io|
+#   date = TinyDate.read(io)
+#   puts date
+# end
+
+data = IO.binread('dates.bin')
+puts data
