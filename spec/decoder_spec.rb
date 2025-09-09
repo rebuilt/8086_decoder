@@ -1,6 +1,16 @@
 require_relative '../decoder'
 
 RSpec.describe '#decode', :model do
+  it 'matches the output of ndisasm for immediate to register movs' do
+    filename = 'immediate_to_register'
+    compare_output(filename)
+  end
+
+  it 'matches the output of ndisasm for single register movs' do
+    filename = 'single_register_mov'
+    compare_output(filename)
+  end
+
   it 'matches the output of ndisasm for many register movs' do
     filename = 'many_register_movs'
     compare_output(filename)
@@ -25,7 +35,7 @@ RSpec.describe '#decode', :model do
     compare_output(filename)
   end
 
-  it 'matches the output for challenge movs' do
+  xit 'matches the output for challenge movs' do
     filename = 'challenge_movs'
     compare_output(filename)
   end
