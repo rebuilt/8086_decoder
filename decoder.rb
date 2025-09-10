@@ -129,9 +129,10 @@ def decode_8086(filepath)
       register_code = (bytes[index] & 0b00000111)
       register_type = w == 0 ? EIGHT_BIT_REGISTERS : SIXTEEN_BIT_REGISTERS
       destination = register_type[register_code]
-      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{((bytes[index + 2] << 8) ^ bytes[index + 1]).to_s(16)}"
+      source = w == 0 ? "0x#{bytes[index + 1].to_s(16)}" : "0x#{((bytes[index + 2] << 8) | bytes[index + 1]).to_s(16)}"
 
       output << "#{opcode} #{destination},#{source}\n"
+      binding.break
       index += w == 0 ? 1 : 2
     when 0b10100000..0b10100001 # MOV memory to accumulator.
       opcode = 'mov'
