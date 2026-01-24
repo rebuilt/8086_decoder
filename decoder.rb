@@ -105,15 +105,15 @@ def decode_8086(filepath)
       end
 
       if mod_field == 0b01 # Direct address, 8 bit displacement
-        effective_address_var = "+0x#{bytes[index + 2].to_s(16)}"
-        d.zero? ? destination += effective_address_var : source += effective_address_var
+        displacement = "+0x#{bytes[index + 2].to_s(16)}"
+        d.zero? ? destination += displacement : source += displacement
         index += 1
       end
 
       if mod_field == 0b10 # Direct address, 8 bit displacement
-        effective_address_var = "+0x#{bytes[index + 2..index + 3].pack('C*').unpack1('v').to_s(16)}"
+        displacement = "+0x#{bytes[index + 2..index + 3].pack('C*').unpack1('v').to_s(16)}"
 
-        d.zero? ? destination += effective_address_var : source += effective_address_var
+        d.zero? ? destination += displacement : source += displacement
         index += 2
       end
 
