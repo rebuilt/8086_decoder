@@ -113,15 +113,17 @@ module ImmediateToRegister
   end
 end
 
+# Register/memory to/from register
 # first byte | second byte | third byte | fourth byte
 # 100010 d w | mod reg r/m | (DISP-LO)  | (DISP-HI)
-
 module RegisterOrMemoryToOrFromRegister
   class << self
     def opcode(bytes, index)
       case bytes[index]
-      when 0b10001000..0b10001011 # Register/memory to/from register
+      when 0b10001000..0b10001011
         'mov'
+      when 0b000000..0b00000011
+        'add'
       end
     end
 
@@ -247,6 +249,10 @@ while index < bytes.length
     output += instruction + "\n"
     index += idx
   when 0b100010..0b10001011
+    instruction, idx = RegisterOrMemoryToOrFromRegister.decode(bytes, index)
+    output += instruction + "\n"
+    index += idx
+  when 0b000000..0b00000011
     instruction, idx = RegisterOrMemoryToOrFromRegister.decode(bytes, index)
     output += instruction + "\n"
     index += idx
