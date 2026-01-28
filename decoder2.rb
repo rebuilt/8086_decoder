@@ -84,7 +84,6 @@ module ImmediateToRegister
   end
 
   def self.get_data(bytes, index, w)
-    byebug
     # data  | data if w == 1
     if w == 0
       if bytes[index] >> 7 & 1 == 1
@@ -149,15 +148,6 @@ module RegisterOrMemoryToOrFromRegister
     bytes[index] & 0b111
   end
 
-  def self.get_data(bytes, index, w)
-    # (DISP-LO)  | (DISP-HI)
-    if w.zero?
-      bytes[index]
-    else
-      (bytes[index + 1] << 8) | bytes[index]
-    end
-  end
-
   def self.register_type(w)
     if w.zero?
       EIGHT_BIT_REGISTERS
@@ -184,17 +174,19 @@ module RegisterOrMemoryToOrFromRegister
   end
 
   def self.increment(mod_code, rm_code, w)
-    case [mod_code, rm_code] # Direct address, 16 bit displacement
-    in [0b0, 0b110]
-      2
-    in [0b01, _]
+    case [mod_code, rm_code, w] # Direct address, 16 bit displacement
+    in [0b0, 0b110, 0]
       3
-    in [0b10, _]
+    in [0b0, 0b110, 1]
       4
-    in [0b11, _]
+    in [0b0, _, _]
       2
-    in [0b0, _]
-      w == 0 ? 2 : 3
+    in [0b01, _, _]
+      3
+    in [0b10, _, _]
+      4
+    in [0b11, _, _]
+      2
     end
   end
 
@@ -218,39 +210,24 @@ module RegisterOrMemoryToOrFromRegister
     rtype = register_type(w)
     eaddress = effective_address(mcode, w)
 
-    # source = d.zero? ? rtype[rcode] : eaddress[rmcode]
-    # destination = d.zero? ? eaddress[rmcode] : rtype[rcode]
-    #
-    # source = "+0x#{bytes[index + 2].to_s(16)}" if mcode == 0b00 && rmcode == 0b110 # Direct address, 16 bit displacement
-    #
-    # if mcode == 0b01 # Direct address, 8 bit displacement
-    #   displacement = "+0x#{bytes[index + 2].to_s(16)}"
-    #   d.zero? ? destination += displacement : source += displacement
-    # end
-    #
-    # if mcode == 0b10 # Direct address, 8 bit displacement
-    #   displacement = "+0x#{bytes[index + 2..index + 3].pack('C*').unpack1('v').to_s(16)}"
-    #
-    #   d.zero? ? destination += displacement : source += displacement
-    # end
-    #
-    # if mcode != 0b11
-    #   d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
-    # end
-    # instruct = "#{o} #{destination}, #{source}"
-
     source = d.zero? ? rtype[rcode] : eaddress[rmcode]
     destination = d.zero? ? eaddress[rmcode] : rtype[rcode]
     case mcode
     when 0b00
-      source = "+0x#{bytes[index + 2].to_s(16)}" if rmcode == 0b110 # Direct address, 16 bit displacement
+      source = "+0x#{bytes[index + 2].to_s(16)}" if rmcode == 0b110 # Direct address, no displacement
+      d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
+    when 0b01
+      disp = displacement(bytes, index + 2, w)
+      d.zero? ? destination = "[#{destination} + #{disp}]" : source = "[#{source} + #{disp}]"
     when 0b11
       # no additional processing needed
     else
-      instruct = 'not implemented yet'
+      d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
     end
     instruct ||= "#{o} #{destination},#{source}"
-    [instruct, increment(mcode, rmcode, w)]
+    inc = increment(mcode, rmcode, w)
+    byebug
+    [instruct, inc]
   end
 end
 
