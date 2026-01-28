@@ -221,10 +221,8 @@ module RegisterOrMemoryToOrFromRegister
       d.zero? ? destination = "[#{destination} + #{disp}]" : source = "[#{source} + #{disp}]"
     when 0b11
       # no additional processing needed
-      # else
-      #   d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
     end
-    instruct ||= "#{o} #{destination},#{source}"
+    instruct = "#{o} #{destination},#{source}"
     inc = increment(mcode, rmcode, w)
     # byebug
     [instruct, inc]
