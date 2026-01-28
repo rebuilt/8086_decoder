@@ -194,7 +194,7 @@ module RegisterOrMemoryToOrFromRegister
     if width == 0
       bytes[index]
     else
-      bytes[index + 1] << 8 & bytes[index]
+      bytes[index + 1] << 8 | bytes[index]
     end
   end
 
@@ -216,17 +216,17 @@ module RegisterOrMemoryToOrFromRegister
     when 0b00
       source = "+0x#{bytes[index + 2].to_s(16)}" if rmcode == 0b110 # Direct address, no displacement
       d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
-    when 0b01
+    when 0b01..0b10
       disp = displacement(bytes, index + 2, w)
       d.zero? ? destination = "[#{destination} + #{disp}]" : source = "[#{source} + #{disp}]"
     when 0b11
       # no additional processing needed
-    else
-      d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
+      # else
+      #   d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
     end
     instruct ||= "#{o} #{destination},#{source}"
     inc = increment(mcode, rmcode, w)
-    byebug
+    # byebug
     [instruct, inc]
   end
 end
