@@ -1,6 +1,7 @@
 bits 16
 
 mov cl, 12
+mov al, 10
 ; mov ch, -12
 ;
 ; ; 16-bit immediate-to-register

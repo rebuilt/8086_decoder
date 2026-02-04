@@ -76,6 +76,7 @@ end
 
 def get_data(bytes, index, w)
   # data  | data if w == 1
+
   if w == 0
     if bytes[index] >> 7 & 1 == 1
       bytes[index] - 256
@@ -101,6 +102,11 @@ def mod_code(bytes, index)
   bytes[index] >> 6
 end
 
+def format(number)
+  output = number.to_s(16)
+  output.index('-') ? output.insert(1, '0x') : output.insert(0, '0x')
+end
+
 # first byte    | second byte | third byte
 # 1 0 1 1 w reg | data        | data if w == 1
 
@@ -123,7 +129,7 @@ module ImmediateToRegister
       w = get_width(bytes, index)
       reg = get_reg(bytes, index, w)
       data = get_data(bytes, index + 1, w)
-      output = "#{opcode} #{reg}, #{data}"
+      output = "#{opcode} #{reg},#{format(data)}"
       increment = w == 0 ? 2 : 3
       [output, increment]
     end
@@ -182,11 +188,19 @@ module RegisterOrMemoryToOrFromRegister
       end
     end
 
-    def displacement(bytes, index, width)
-      if width == 0
-        bytes[index]
-      else
-        bytes[index + 1] << 8 | bytes[index]
+    def displacement(bytes, index, mod_code)
+      if mod_code == 0b10
+        if bytes[index + 1] >> 7 & 1 == 1
+          ((bytes[index + 1] << 8) | bytes[index]) - 65_536
+        else
+          (bytes[index + 1] << 8) | bytes[index]
+        end
+      elsif mod_code == 0b01
+        if bytes[index] >> 7 & 1 == 1
+          bytes[index] - 256
+        else
+          bytes[index]
+        end
       end
     end
 
@@ -205,11 +219,17 @@ module RegisterOrMemoryToOrFromRegister
       destination = d.zero? ? eaddress[rmcode] : rtype[rcode]
       case mcode
       when 0b00
-        source = "+0x#{bytes[index + 2].to_s(16)}" if rmcode == 0b110 # Direct address, no displacement
+        if rmcode == 0b110
+          data = format(bytes[index + 2])
+          source = "#{data}"
+        end
         d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
       when 0b01..0b10
-        disp = displacement(bytes, index + 2, w)
-        d.zero? ? destination = "[#{destination} + #{disp}]" : source = "[#{source} + #{disp}]"
+        output = displacement(bytes, index + 2, mcode)
+
+        output = output.to_s(16)
+        output = output.index('-') ? output.insert(1, '0x') : output.insert(0, '+0x')
+        d.zero? ? destination = "[#{destination}#{output}]" : source = "[#{source}#{output}]"
       when 0b11
         # no additional processing needed
       end
@@ -263,17 +283,6 @@ module RegisterOrMemoryToOrFromSegmentRegister
       end
     end
 
-    def displacement(bytes, index, mod_code)
-      case mod_code
-      when 0b01
-        bytes[index]
-      when 0b10
-        bytes[index + 1] << 8 | bytes[index]
-      else
-        0
-      end
-    end
-
     def increment(mod_code)
       case mod_code
       in 0b00
@@ -324,7 +333,6 @@ binary_file = ARGV[0]
 binary_file ||= './asm/register_movs'
 
 bytes = File.binread(binary_file).bytes
-puts bytes.length
 index = 0
 output = ''
 
