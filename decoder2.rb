@@ -1,4 +1,5 @@
 require 'byebug'
+require 'debug'
 
 EIGHT_BIT_REGISTERS = {
   0b000 => 'al',
@@ -78,17 +79,9 @@ def get_data(bytes, index, w)
   # data  | data if w == 1
 
   if w == 0
-    if bytes[index] >> 7 & 1 == 1
-      bytes[index] - 256
-    else
-      bytes[index]
-    end
+    bytes[index]
   elsif w == 1
-    if bytes[index + 1] >> 7 & 1 == 1
-      ((bytes[index + 1] << 8) | bytes[index]) - 65_536
-    else
-      (bytes[index + 1] << 8) | bytes[index]
-    end
+    (bytes[index + 1] << 8) | bytes[index]
   end
 end
 
@@ -217,6 +210,7 @@ module RegisterOrMemoryToOrFromRegister
 
       source = d.zero? ? rtype[rcode] : eaddress[rmcode]
       destination = d.zero? ? eaddress[rmcode] : rtype[rcode]
+
       case mcode
       when 0b00
         if rmcode == 0b110
@@ -225,17 +219,17 @@ module RegisterOrMemoryToOrFromRegister
         end
         d.zero? ? destination = "[#{destination}]" : source = "[#{source}]"
       when 0b01..0b10
-        output = displacement(bytes, index + 2, mcode)
-
-        output = output.to_s(16)
-        output = output.index('-') ? output.insert(1, '0x') : output.insert(0, '+0x')
-        d.zero? ? destination = "[#{destination}#{output}]" : source = "[#{source}#{output}]"
+        disp = displacement(bytes, index + 2, mcode)
+        num = disp
+        disp = disp.to_s(16)
+        disp = disp.index('-') ? disp.insert(1, '0x') : disp.insert(0, '0x')
+        operator = num >= 0 ? '+' : ''
+        d.zero? ? destination = "[#{destination}#{operator}#{disp}]" : source = "[#{source}#{operator}#{disp}]"
       when 0b11
         # no additional processing needed
       end
       instruct = "#{opcode} #{destination},#{source}"
       inc = increment(mcode, rmcode, w)
-      # byebug
       [instruct, inc]
     end
   end
@@ -248,16 +242,15 @@ module MemoryToOrFromAccumulator
     end
 
     def decode(opcode, bytes, index)
-      # to be implemented
       d = direction(bytes, index)
       w = width(bytes, index)
       data = get_data(bytes, index + 1, w)
+      data = '0x' + data.to_s(16)
 
       destination = d.zero? ? 'ax' : "[#{data}]"
       source = d.zero? ? "[#{data}]" : 'ax'
       instruct = "#{opcode} #{destination},#{source}"
       inc = increment(w)
-      # byebug
       [instruct, inc]
     end
   end
